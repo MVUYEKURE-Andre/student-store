@@ -1,0 +1,76 @@
+{% extends "shop/base.html" %}
+
+{% block title %}Your Cart — Student Store{% endblock %}
+
+{% block content %}
+<h1 class="text-3xl font-bold text-gray-800 mb-6">Your Cart</h1>
+
+{% if cart_items %}
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <table class="w-full text-left">
+            <thead class="bg-gray-100 text-gray-600 text-sm uppercase">
+                <tr>
+                    <th class="px-4 py-3">Product</th>
+                    <th class="px-4 py-3 hidden sm:table-cell">Price</th>
+                    <th class="px-4 py-3">Qty</th>
+                    <th class="px-4 py-3">Subtotal</th>
+                    <th class="px-4 py-3"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cart_items %}
+                    <tr class="border-t border-gray-100">
+                        <td class="px-4 py-4">
+                            <div class="flex items-center gap-3">
+                                {% if item.product.image %}
+                                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}"
+                                         class="w-12 h-12 rounded object-cover">
+                                {% elif item.product.image_url %}
+                                    <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}"
+                                         class="w-12 h-12 rounded object-cover">
+                                {% else %}
+                                    <img src="https://placehold.co/48x48?text=%20" alt="{{ item.product.name }}"
+                                         class="w-12 h-12 rounded object-cover">
+                                {% endif %}
+                                <span class="font-medium text-gray-800">{{ item.product.name }}</span>
+                            </div>
+                        </td>
+                        <td class="px-4 py-4 hidden sm:table-cell text-gray-600">${{ item.product.price }}</td>
+                        <td class="px-4 py-4">
+                            <form method="post" action="{% url 'shop:cart_update' item.product.id %}" class="flex items-center gap-1">
+                                {% csrf_token %}
+                                <input type="number" name="quantity" value="{{ item.quantity }}" min="1"
+                                       class="w-16 border border-gray-300 rounded px-2 py-1 text-center">
+                                <button type="submit" class="text-indigo-600 text-sm hover:underline">Update</button>
+                            </form>
+                        </td>
+                        <td class="px-4 py-4 font-medium">${{ item.subtotal }}</td>
+                        <td class="px-4 py-4">
+                            <form method="post" action="{% url 'shop:cart_remove' item.product.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="text-red-500 hover:text-red-700 text-sm">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <a href="{% url 'shop:home' %}" class="text-indigo-600 hover:underline">&larr; Continue shopping</a>
+        <div class="text-right">
+            <p class="text-2xl font-bold text-gray-800">Total: ${{ cart_total }}</p>
+            <a href="{% url 'shop:checkout' %}"
+               class="mt-2 inline-block bg-indigo-600 text-white py-3 px-8 rounded-lg hover:bg-indigo-700 transition font-medium">
+                Checkout
+            </a>
+        </div>
+    </div>
+{% else %}
+    <div class="text-center py-16 text-gray-500">
+        <p class="text-xl">Your cart is empty.</p>
+        <a href="{% url 'shop:home' %}" class="mt-4 inline-block text-indigo-600 hover:underline">Start shopping</a>
+    </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "shop/base.html" %}
+
+{% block title %}Services — Student Store{% endblock %}
+
+{% block content %}
+<section class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-2xl shadow-md p-8 md:p-10">
+        <p class="text-sm font-semibold uppercase tracking-widest text-indigo-600">Services</p>
+        <h1 class="mt-2 text-3xl font-bold text-gray-900">How it works</h1>
+        <div class="mt-6 grid gap-4 md:grid-cols-2">
+            <div class="rounded-xl border border-gray-100 bg-gray-50 p-5">
+                <h2 class="font-semibold text-gray-900">Browse products</h2>
+                <p class="mt-2 text-sm text-gray-600">Explore the catalog and find affordable essentials for everyday student life.</p>
+            </div>
+            <div class="rounded-xl border border-gray-100 bg-gray-50 p-5">
+                <h2 class="font-semibold text-gray-900">Add to cart</h2>
+                <p class="mt-2 text-sm text-gray-600">Select the items you want and keep shopping until your cart is ready.</p>
+            </div>
+            <div class="rounded-xl border border-gray-100 bg-gray-50 p-5">
+                <h2 class="font-semibold text-gray-900">Checkout fast</h2>
+                <p class="mt-2 text-sm text-gray-600">No login required. Complete checkout quickly with your name and email.</p>
+            </div>
+            <div class="rounded-xl border border-gray-100 bg-gray-50 p-5">
+                <h2 class="font-semibold text-gray-900">Campus delivery</h2>
+                <p class="mt-2 text-sm text-gray-600">We focus on fast delivery on campus so you can get back to your day sooner.</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
