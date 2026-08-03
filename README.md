@@ -120,6 +120,17 @@ In the Web Service **Environment** tab, add:
 | `DEBUG` | `False` |
 | `ALLOWED_HOSTS` | Your Render hostname, e.g. `student-store.onrender.com` |
 | `DATABASE_URL` | Paste the Internal Database URL from Step 1 |
+| `EMAIL_HOST_USER` | Outbound email account (for contact/order notifications) |
+| `EMAIL_HOST_PASSWORD` | App password or SMTP password for `EMAIL_HOST_USER` |
+
+Required Render environment variables for this project are:
+
+- `DATABASE_URL`
+- `ALLOWED_HOSTS`
+- `SECRET_KEY`
+- `DEBUG`
+- `EMAIL_HOST_USER`
+- `EMAIL_HOST_PASSWORD`
 
 > Render auto-links the database if you create the Web Service from the database page. In that case `DATABASE_URL` is set automatically.
 

@@ -7,8 +7,8 @@ so the same code works locally and on Render.
 
 import os
 from pathlib import Path
-from urllib.parse import urlparse
 
+import dj_database_url
 from dotenv import load_dotenv
 
 # Load variables from a .env file in the project root (local dev only)
@@ -84,32 +84,13 @@ TEMPLATES = [
 WSGI_APPLICATION = "store.wsgi.application"
 
 # --- Database ---
-# Uses SQLite locally; switches to PostgreSQL when DATABASE_URL is set (Render)
-DATABASE_URL = os.environ.get("DATABASE_URL")
-
-if DATABASE_URL:
-    # Render provides postgres:// — Django needs postgresql://
-    if DATABASE_URL.startswith("postgres://"):
-        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-
-    db_url = urlparse(DATABASE_URL)
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": db_url.path[1:],
-            "USER": db_url.username,
-            "PASSWORD": db_url.password,
-            "HOST": db_url.hostname,
-            "PORT": db_url.port or 5432,
-        }
-    }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
-    }
+# Uses DATABASE_URL when provided (Render/PostgreSQL), otherwise falls back to local SQLite.
+DATABASES = {
+    "default": dj_database_url.config(
+        default="sqlite:///" + str(BASE_DIR / "db.sqlite3"),
+        conn_max_age=600,
+    )
+}
 
 # --- Auth password validation ---
 AUTH_PASSWORD_VALIDATORS = [
