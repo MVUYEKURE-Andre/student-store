@@ -87,16 +87,42 @@ SAMPLE_PRODUCTS = [
 class Command(BaseCommand):
     help = "Seed the database with 10 sample products for testing"
 
-    def handle(self, *args, **options):
-        Product.objects.all().delete()
 
+
+    def handle(self, *args, **options):
         created_count = 0
+        skipped_count = 0
+
         for data in SAMPLE_PRODUCTS:
-            Product.objects.create(**data)
-            created_count += 1
+            name = data.pop("name")
+            product, created = Product.objects.get_or_create(
+                name=name,
+                defaults=data,
+            )
+            data["name"] = name  # restore key in case of reuse
+
+            if created:
+                created_count += 1
+            else:
+                skipped_count += 1
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Done! Replaced existing products and created {created_count} sample items."
+                f"Done! Created {created_count} new product(s), "
+                f"skipped {skipped_count} already existing."
             )
         )
+
+    # def handle(self, *args, **options):
+    #     Product.objects.all().delete()
+
+    #     created_count = 0
+    #     for data in SAMPLE_PRODUCTS:
+    #         Product.objects.create(**data)
+    #         created_count += 1
+
+    #     self.stdout.write(
+    #         self.style.SUCCESS(
+    #             f"Done! Replaced existing products and created {created_count} sample items."
+    #         )
+    #     )
