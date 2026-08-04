@@ -1,7 +1,7 @@
 """Email helpers for order notifications."""
 
+import resend
 from django.conf import settings
-from django.core.mail import send_mail
 
 
 def _build_order_summary(order) -> str:
@@ -22,26 +22,60 @@ def _build_order_summary(order) -> str:
 
 def send_new_order_notification(order) -> None:
     """Notify the admin when a new order is placed."""
-    send_mail(
-        subject=f"New order #{order.pk} received",
-        message=_build_order_summary(order),
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=["etelevel463@gmail.com"],
-        fail_silently=False,
-    )
+    try:
+        api_key = getattr(settings, "RESEND_API_KEY", None)
+        if not api_key:
+            print("RESEND_API_KEY not configured. Skipping admin notification.", flush=True)
+            return
+        resend.api_key = api_key
+        resend.Emails.send({
+            "from": getattr(settings, "DEFAULT_FROM_EMAIL", "onboarding@resend.dev"),
+            "to": ["etelevel463@gmail.com"],
+            "subject": f"New order #{order.pk} received",
+            "text": _build_order_summary(order),
+        })
+    except Exception as exc:
+        print(f"RESEND ADMIN NOTIFICATION ERROR: {exc}", flush=True)
+
+
+def send_order_confirmation(order) -> None:
+    """Notify the customer when their order is confirmed."""
+    try:
+        api_key = getattr(settings, "RESEND_API_KEY", None)
+        if not api_key or not order.customer_email:
+            return
+        resend.api_key = api_key
+        resend.Emails.send({
+            "from": getattr(settings, "DEFAULT_FROM_EMAIL", "onboarding@resend.dev"),
+            "to": [order.customer_email],
+            "subject": f"Order Confirmation - Order #{order.pk}",
+            "text": (
+                f"Hello {order.customer_name},\n\n"
+                f"Thank you for your order!\n\n"
+                f"{_build_order_summary(order)}"
+            ),
+        })
+    except Exception as exc:
+        print(f"RESEND ORDER CONFIRMATION ERROR: {exc}", flush=True)
 
 
 def send_order_status_update(order) -> None:
     """Notify the customer when an order status changes."""
-    send_mail(
-        subject=f"Your order #{order.pk} is now {order.get_status_display()}",
-        message=(
-            f"Hello {order.customer_name},\n\n"
-            f"Your order #{order.pk} is now {order.get_status_display()}.\n\n"
-            f"Total: ${order.total}\n"
-            f"Email: {order.customer_email}"
-        ),
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[order.customer_email],
-        fail_silently=False,
-    )
+    try:
+        api_key = getattr(settings, "RESEND_API_KEY", None)
+        if not api_key or not order.customer_email:
+            return
+        resend.api_key = api_key
+        resend.Emails.send({
+            "from": getattr(settings, "DEFAULT_FROM_EMAIL", "onboarding@resend.dev"),
+            "to": [order.customer_email],
+            "subject": f"Your order #{order.pk} is now {order.get_status_display()}",
+            "text": (
+                f"Hello {order.customer_name},\n\n"
+                f"Your order #{order.pk} is now {order.get_status_display()}.\n\n"
+                f"Total: ${order.total}\n"
+                f"Email: {order.customer_email}"
+            ),
+        })
+    except Exception as exc:
+        print(f"RESEND STATUS UPDATE ERROR: {exc}", flush=True)

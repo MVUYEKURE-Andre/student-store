@@ -2,13 +2,13 @@
 Views for the shop — each function handles one page or action.
 """
 
+import resend
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
-from django.core.mail import send_mail
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -20,7 +20,7 @@ from .cart import (
     remove_from_cart,
     update_cart_item,
 )
-from .email_utils import send_new_order_notification
+from .email_utils import send_new_order_notification, send_order_confirmation
 from .models import Order, OrderItem, Product
 
 
@@ -97,13 +97,15 @@ def contact(request):
             )
 
             try:
-                send_mail(
-                    subject=subject,
-                    message=body,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[settings.EMAIL_HOST_USER],
-                    fail_silently=False,
-                )
+                api_key = getattr(settings, "RESEND_API_KEY", None)
+                if api_key:
+                    resend.api_key = api_key
+                    resend.Emails.send({
+                        "from": getattr(settings, "DEFAULT_FROM_EMAIL", "onboarding@resend.dev"),
+                        "to": ["etelevel463@gmail.com"],
+                        "subject": subject,
+                        "text": body,
+                    })
                 messages.success(request, "Thanks for reaching out. We'll get back to you soon.")
                 return redirect("shop:contact")
             except Exception as exc:
@@ -200,6 +202,7 @@ def checkout(request):
 
             try:
                 send_new_order_notification(order)
+                send_order_confirmation(order)
             except Exception as exc:
                 print("NEW ORDER EMAIL ERROR:", exc, flush=True)
 
