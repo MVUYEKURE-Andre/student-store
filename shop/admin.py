@@ -6,7 +6,7 @@ products and orders at /admin without writing code.
 from django.contrib import admin
 
 from .email_utils import send_order_status_update
-from .models import Order, OrderItem, Product
+from .models import Order, OrderItem, OrderStatusHistory, Product
 
 
 @admin.register(Product)
@@ -27,6 +27,15 @@ class OrderItemInline(admin.TabularInline):
     readonly_fields = ("product", "quantity", "price_at_purchase")
 
 
+class OrderStatusHistoryInline(admin.TabularInline):
+    """Show status history log on the order edit page."""
+
+    model = OrderStatusHistory
+    extra = 0
+    readonly_fields = ("status", "changed_at")
+    can_delete = False
+
+
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     """Order list shows customer info, date, payment status, and total."""
@@ -44,7 +53,7 @@ class OrderAdmin(admin.ModelAdmin):
     list_editable = ("status",)
     list_filter = ("status", "created_at")
     search_fields = ("customer_name", "customer_email")
-    inlines = [OrderItemInline]
+    inlines = [OrderItemInline, OrderStatusHistoryInline]
     readonly_fields = ("created_at",)
     list_select_related = ("user",)
 
@@ -59,11 +68,13 @@ class OrderAdmin(admin.ModelAdmin):
 
         super().save_model(request, obj, form, change)
 
-        if change and old_status and old_status != obj.status and obj.customer_email:
-            try:
-                send_order_status_update(obj)
-            except Exception as exc:
-                print("ORDER STATUS EMAIL ERROR:", exc, flush=True)
+        if change and old_status and old_status != obj.status:
+            OrderStatusHistory.objects.create(order=obj, status=obj.status)
+            if obj.customer_email:
+                try:
+                    send_order_status_update(obj)
+                except Exception as exc:
+                    print("ORDER STATUS EMAIL ERROR:", exc, flush=True)
 
 
 @admin.register(OrderItem)

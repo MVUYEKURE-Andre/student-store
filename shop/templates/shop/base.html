@@ -1,10 +1,14 @@
 {# Base template — shared layout, navbar, and Tailwind CSS CDN. #}
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Student Store{% endblock %}</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+    <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
     <!-- Tailwind CSS via CDN — no build step needed -->
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -51,6 +55,12 @@
                        class="px-3 py-2 rounded-lg transition {% if request.resolver_match.url_name == 'my_orders' %}bg-white text-indigo-700 shadow{% else %}hover:bg-indigo-500/70 hover:text-white{% endif %}">
                         My Orders
                     </a>
+                    {% if request.user.is_staff %}
+                        <a href="{% url 'shop:admin_dashboard' %}"
+                           class="px-3 py-2 rounded-lg transition {% if request.resolver_match.url_name == 'admin_dashboard' %}bg-white text-indigo-700 shadow{% else %}hover:bg-indigo-500/70 hover:text-white{% endif %}">
+                            📊 Dashboard
+                        </a>
+                    {% endif %}
                     <span class="px-3 py-2 rounded-lg bg-indigo-500/40 text-white">
                         Hi, {{ request.user.username }}
                     </span>

@@ -21,6 +21,7 @@ urlpatterns = [
     ),
     path("logout/", views.logout_view, name="logout"),
     path("my-orders/", views.my_orders, name="my_orders"),
+    path("admin-dashboard/", views.admin_dashboard, name="admin_dashboard"),
     path("product/<int:product_id>/", views.product_detail, name="product_detail"),
     path("cart/", views.cart_view, name="cart"),
     path("cart/add/<int:product_id>/", views.cart_add, name="cart_add"),

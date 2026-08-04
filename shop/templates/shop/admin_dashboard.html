@@ -1,0 +1,167 @@
+{% extends "shop/base.html" %}
+
+{% block title %}Admin Analytics Dashboard — Student Store{% endblock %}
+
+{% block content %}
+<section class="max-w-6xl mx-auto space-y-8">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">📊 Admin Analytics Dashboard</h1>
+            <p class="text-gray-500 mt-1">Overview of store sales, order status breakdown, and customer growth.</p>
+        </div>
+        <a href="{% url 'admin:index' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg text-sm font-semibold hover:bg-gray-700 transition">
+            ⚙️ Open Django Admin
+        </a>
+    </div>
+
+    <!-- Top Key Metrics Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Total Revenue -->
+        <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-emerald-500 flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Revenue</p>
+                <p class="text-3xl font-extrabold text-gray-900 mt-2">${{ total_revenue }}</p>
+                <p class="text-xs text-gray-500 mt-1">Excludes cancelled orders</p>
+            </div>
+            <div class="p-3 bg-emerald-50 text-emerald-600 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+        </div>
+
+        <!-- Total Orders -->
+        <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-indigo-500 flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Orders</p>
+                <p class="text-3xl font-extrabold text-gray-900 mt-2">{{ total_orders }}</p>
+                <p class="text-xs text-gray-500 mt-1">Across all statuses</p>
+            </div>
+            <div class="p-3 bg-indigo-50 text-indigo-600 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+            </div>
+        </div>
+
+        <!-- Registered Users -->
+        <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-purple-500 flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Registered Users</p>
+                <p class="text-3xl font-extrabold text-gray-900 mt-2">{{ total_users }}</p>
+                <p class="text-xs text-gray-500 mt-1">Active customer accounts</p>
+            </div>
+            <div class="p-3 bg-purple-50 text-purple-600 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5 5 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Status Breakdown -->
+    <div>
+        <h2 class="text-xl font-bold text-gray-900 mb-4">Order Status Breakdown</h2>
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+                <span class="text-xs font-bold text-amber-700 uppercase tracking-wider">Pending</span>
+                <p class="text-2xl font-extrabold text-amber-900 mt-1">{{ status_counts.pending }}</p>
+            </div>
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
+                <span class="text-xs font-bold text-blue-700 uppercase tracking-wider">Processing</span>
+                <p class="text-2xl font-extrabold text-blue-900 mt-1">{{ status_counts.processing }}</p>
+            </div>
+            <div class="bg-purple-50 border border-purple-200 rounded-xl p-4 text-center">
+                <span class="text-xs font-bold text-purple-700 uppercase tracking-wider">Shipped</span>
+                <p class="text-2xl font-extrabold text-purple-900 mt-1">{{ status_counts.shipped }}</p>
+            </div>
+            <div class="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
+                <span class="text-xs font-bold text-green-700 uppercase tracking-wider">Delivered</span>
+                <p class="text-2xl font-extrabold text-green-900 mt-1">{{ status_counts.delivered }}</p>
+            </div>
+            <div class="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
+                <span class="text-xs font-bold text-red-700 uppercase tracking-wider">Cancelled</span>
+                <p class="text-2xl font-extrabold text-red-900 mt-1">{{ status_counts.cancelled }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart & Top Products Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Chart.js 14-Day Orders Chart -->
+        <div class="lg:col-span-2 bg-white rounded-xl shadow-md p-6">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">📈 Orders per Day (Last 14 Days)</h2>
+            <div class="relative h-64 w-full">
+                <canvas id="ordersChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Top 5 Best-Selling Products -->
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">🔥 Top Best-Sellers</h2>
+            {% if top_products %}
+                <div class="space-y-4">
+                    {% for item in top_products %}
+                        <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+                            <div class="truncate max-w-[180px]">
+                                <p class="text-sm font-semibold text-gray-900 truncate">{{ item.product__name }}</p>
+                                <p class="text-xs text-gray-500">${{ item.total_sales }} revenue</p>
+                            </div>
+                            <span class="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-bold">
+                                {{ item.total_sold }} sold
+                            </span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-sm text-gray-500">No product sales recorded yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- Chart.js Library via CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const rawData = JSON.parse('{{ chart_json|escapejs }}');
+        const ctx = document.getElementById('ordersChart').getContext('2d');
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: rawData.labels,
+                datasets: [{
+                    label: 'Orders Placed',
+                    data: rawData.data,
+                    borderColor: '#4f46e5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.3,
+                    pointBackgroundColor: '#4f46e5',
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

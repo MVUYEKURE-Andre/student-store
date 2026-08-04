@@ -14,6 +14,18 @@ from dotenv import load_dotenv
 # Load variables from a .env file in the project root (local dev only)
 load_dotenv(override=True)
 
+# Fix for Python 3.14 copy(super()) compatibility in Django 4.2 template context
+import copy
+from django.template import context
+
+def _patched_base_context_copy(self):
+    duplicate = self.__class__.__new__(self.__class__)
+    duplicate.__dict__.update(self.__dict__)
+    duplicate.dicts = self.dicts[:]
+    return duplicate
+
+context.BaseContext.__copy__ = _patched_base_context_copy
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
@@ -107,6 +119,7 @@ USE_TZ = True
 # --- Static files (CSS, JS, images) ---
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [BASE_DIR / "static"]
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 STORAGES = {

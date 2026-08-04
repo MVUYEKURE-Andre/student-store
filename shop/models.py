@@ -80,3 +80,29 @@ class OrderItem(models.Model):
     @property
     def line_total(self):
         return self.price_at_purchase * self.quantity
+
+
+class OrderStatusHistory(models.Model):
+    """Tracks status changes for an order over time."""
+
+    order = models.ForeignKey(
+        Order, related_name="status_history", on_delete=models.CASCADE
+    )
+    status = models.CharField(max_length=20, choices=Order.STATUS_CHOICES)
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["changed_at"]
+
+    def __str__(self):
+        return f"Order #{self.order_id} -> {self.get_status_display()} at {self.changed_at}"
+
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+
+@receiver(post_save, sender=Order)
+def create_initial_order_status_history(sender, instance, created, **kwargs):
+    if created:
+        OrderStatusHistory.objects.create(order=instance, status=instance.status)

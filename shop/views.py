@@ -2,6 +2,14 @@
 Views for the shop — each function handles one page or action.
 """
 
+import json
+from datetime import timedelta
+from decimal import Decimal
+from django.utils import timezone
+from django.db.models import Sum, Count, F
+from django.db.models.functions import TruncDate
+from django.contrib.auth.models import User
+
 import resend
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
@@ -21,7 +29,7 @@ from .cart import (
     update_cart_item,
 )
 from .email_utils import send_new_order_notification, send_order_confirmation
-from .models import Order, OrderItem, Product
+from .models import Order, OrderItem, OrderStatusHistory, Product
 
 
 def home(request):
@@ -228,7 +236,85 @@ def my_orders(request):
     orders = (
         Order.objects.filter(user=request.user)
         .select_related("user")
-        .prefetch_related("items__product")
+        .prefetch_related("items__product", "status_history")
         .order_by("-created_at")
     )
     return render(request, "shop/my_orders.html", {"orders": orders})
+
+
+@login_required
+def admin_dashboard(request):
+    """Staff-only analytics dashboard with metrics and Chart.js visualization."""
+    if not request.user.is_staff:
+        messages.error(request, "Access restricted to staff users only.")
+        return redirect("shop:home")
+
+    # 1. Total revenue excluding cancelled orders
+    revenue_agg = OrderItem.objects.exclude(
+        order__status=Order.STATUS_CANCELLED
+    ).aggregate(
+        total=Sum(F("price_at_purchase") * F("quantity"))
+    )
+    total_revenue = revenue_agg["total"] or Decimal("0.00")
+
+    # 2. Total orders and status breakdown
+    total_orders = Order.objects.count()
+    status_counts = {
+        "pending": Order.objects.filter(status=Order.STATUS_PENDING).count(),
+        "processing": Order.objects.filter(status=Order.STATUS_PROCESSING).count(),
+        "shipped": Order.objects.filter(status=Order.STATUS_SHIPPED).count(),
+        "delivered": Order.objects.filter(status=Order.STATUS_DELIVERED).count(),
+        "cancelled": Order.objects.filter(status=Order.STATUS_CANCELLED).count(),
+    }
+
+    # 3. Top 5 best-selling products
+    top_products = (
+        OrderItem.objects.values("product__id", "product__name")
+        .annotate(
+            total_sold=Sum("quantity"),
+            total_sales=Sum(F("price_at_purchase") * F("quantity"))
+        )
+        .order_by("-total_sold")[:5]
+    )
+
+    # 4. Total registered users
+    total_users = User.objects.count()
+
+    # 5. Orders per day for the last 14 days
+    today = timezone.now().date()
+    start_date = today - timedelta(days=13)
+
+    daily_orders = (
+        Order.objects.filter(created_at__date__gte=start_date)
+        .annotate(order_date=TruncDate("created_at"))
+        .values("order_date")
+        .annotate(count=Count("id"))
+    )
+    order_dict = {
+        item["order_date"].strftime("%Y-%m-%d"): item["count"]
+        for item in daily_orders
+        if item.get("order_date")
+    }
+
+    chart_labels = []
+    chart_data = []
+    for i in range(14):
+        day = start_date + timedelta(days=i)
+        day_str = day.strftime("%Y-%m-%d")
+        chart_labels.append(day.strftime("%b %d"))
+        chart_data.append(order_dict.get(day_str, 0))
+
+    chart_json = json.dumps({
+        "labels": chart_labels,
+        "data": chart_data,
+    })
+
+    context = {
+        "total_revenue": total_revenue,
+        "total_orders": total_orders,
+        "status_counts": status_counts,
+        "top_products": top_products,
+        "total_users": total_users,
+        "chart_json": chart_json,
+    }
+    return render(request, "shop/admin_dashboard.html", context)
